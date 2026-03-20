@@ -24,6 +24,23 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    instrument:{
+      type:String,
+      default:"",
+    },
+    skillLevel:{
+      type:String,
+      enum:["beginner", "intermediate", "advanced"],
+      default:"beginner"
+    },
+    genre:{
+      type:String,
+      default:""
+    },
+    availability:{
+      type:String,
+      default:""
+    }
   },
   { timestamps: true },
 );

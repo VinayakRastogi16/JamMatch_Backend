@@ -3,8 +3,10 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import "dotenv/config";
 import cors from "cors";
+import { sample } from "./data/sampleData.js";
 import router from "./routes/user.routes.js";
 import { verifyToken } from "./middlewares/verifyToken.middleware.js";
+import { User } from "./models/user.model.js";
 
 const app = express();
 const mongoUri =process.env.MONGO_URI;
@@ -28,6 +30,12 @@ app.get("/api/test", verifyToken, (req, res) => {
     user: req.user,
   });
 });
+
+// app.post("/sample", async (req, res)=>{
+//   const newUsers = await User.insertMany(sample);
+//   console.log("users inserted")
+
+// })
 
 app.listen(8080, () => {
   console.log("server running at port: 8080");
