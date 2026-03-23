@@ -121,9 +121,7 @@ const details = async (req, res) => {
         genre,
         availability,
       },
-      { returnDocument:"after",
-        runValidators: true
-       },
+      { returnDocument: "after", runValidators: true },
     );
 
     return res.json({
@@ -145,35 +143,257 @@ const details = async (req, res) => {
   }
 };
 
-const getMatches = async (req, res)=>{
-  try{
+const getMatches = async (req, res) => {
+  try {
     const currUser = await User.findById(req.user.userId);
 
+    if (!currUser) {
+      return res
+        .status(httpStatus.NOT_FOUND)
+        .json({ message: "User not found!" });
+    }
+
     const users = await User.find({
-      _id:{$ne : currUser._id},
-      instrument:{$ne: ""},
-      genre: {$ne: ""}
+      _id: {
+        $ne: currUser._id,
+        $nin: [
+          ...currUser.likedUsers,
+          ...currUser.matchedUsers,
+          ...currUser.skippedUsers,
+        ],
+      },
+      instrument: { $ne: "" },
+      genre: { $ne: "" },
     });
 
-    const matches = users.map(user =>({
-      user:{
-        id:user._id,
+    const matches = users.map((user) => ({
+      user: {
+        id: user._id,
         username: user.username,
-        instrument:user.instrument,
-        skillLevel:user.skillLevel,
-        genre:user.genre
+        instrument: user.instrument,
+        skillLevel: user.skillLevel,
+        genre: user.genre,
+        availability: user.availability,
       },
-      score: calculateScore(currUser, user)
+      score: calculateScore(currUser, user),
     }));
 
-    matches.sort((a,b)=> b.score - a.score);
+    const filtered = matches.filter((m) => m.score > 30);
 
-    return res.json(matches)
-  }catch(e){
+    filtered.sort((a, b) => b.score - a.score);
+
+    return res.json(filtered.slice(0, 10));
+  } catch (e) {
     console.error(e);
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({message:"Internal Server Error"})
+    return res
+      .status(httpStatus.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal Server Error" });
   }
-}
+};
 
+const likeUser = async (req, res) => {
+  const targetUserId = req.params.id;
+  const currentUserId = req.user.userId;
 
-export { login, register, details, getMatches };
+  try {
+    if (targetUserId === currentUserId) {
+      return res.status(400).json({
+        message: "You can't like yourself",
+      });
+    }
+
+    const currentUser = await User.findById(currentUserId);
+    const targetUser = await User.findById(targetUserId);
+
+    if (!currentUser) {
+      return res.status(404).json({
+        message: "Current user not found",
+      });
+    }
+
+    if (!targetUser) {
+      return res.status(404).json({
+        message: "Target user not found",
+      });
+    }
+
+    currentUser.likedUsers = currentUser.likedUsers || [];
+    currentUser.skippedUsers = currentUser.skippedUsers || [];
+
+    targetUser.likedUsers = targetUser.likedUsers || [];
+    targetUser.matchedUsers = targetUser.matchedUsers || [];
+
+    currentUser.skippedUsers = currentUser.skippedUsers.filter(
+      (id) => id.toString() !== targetUserId,
+    );
+
+    const alreadyLiked = currentUser.likedUsers.some(
+      (id) => id.toString() === targetUserId,
+    );
+
+    if (!alreadyLiked) {
+      currentUser.likedUsers.push(targetUserId);
+    }
+
+    let isMatch = false;
+
+    const targetLikedYou = targetUser.likedUsers.some(
+      (id) => id.toString() === currentUserId,
+    );
+
+    if (targetLikedYou) {
+      isMatch = true;
+
+      if (
+        !currentUser.matchedUsers.some((id) => id.toString() === targetUserId)
+      ) {
+        currentUser.matchedUsers.push(targetUserId);
+      }
+
+      if (
+        !targetUser.matchedUsers.some((id) => id.toString() === currentUserId)
+      ) {
+        targetUser.matchedUsers.push(currentUserId);
+      }
+
+      await targetUser.save();
+    }
+
+    await currentUser.save();
+
+    return res.json({
+      message: "User liked",
+      match: isMatch,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const skipUsers = async (req, res) => {
+  const targetUserId = req.params.id;
+  const currUserId = req.user.userId;
+
+  try {
+    const user = await User.findById(currUserId);
+
+    if (!user) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+
+    user.skippedUsers = user.skippedUsers || [];
+    user.likedUsers = user.likedUsers || [];
+    user.matchedUsers = user.matchedUsers || [];
+
+    user.likedUsers = user.likedUsers.filter(
+      (id) => id.toString() !== targetUserId,
+    );
+
+    user.matchedUsers = user.matchedUsers.filter(
+      (id) => id.toString() !== targetUserId,
+    );
+
+    const alreadySkipped = user.skippedUsers.some(
+      (id) => id.toString() === targetUserId,
+    );
+
+    if (!alreadySkipped) {
+      user.skippedUsers.push(targetUserId);
+    }
+
+    if (!user.skippedUsers.some((id) => id.toString() === targetUserId)) {
+      user.skippedUsers.push(targetUserId);
+    }
+
+    await user.save();
+
+    return res.json({ message: "User skipped" });
+  } catch (e) {
+    console.error(e);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const getNextUser = async (req, res) => {
+  const currUserId = req.user.userId;
+
+  try {
+    const user = await User.findById(currUserId);
+
+    if (!user) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        message: "User not found",
+      });
+    }
+
+    user.likedUsers = user.likedUsers || [];
+    user.matchedUsers = user.matchedUsers || [];
+    user.skippedUsers = user.skippedUsers || [];
+
+    const excludeUsers = [
+      ...user.likedUsers,
+      ...user.matchedUsers,
+      ...user.skippedUsers,
+      user._id,
+    ].filter((id) => id);
+
+    const users = await User.find({
+      _id: { $nin: excludeUsers },
+      instrument: { $ne: "" },
+      genre: { $ne: "" },
+    });
+
+    if (!users.length) {
+      return res.status(404).json({ message: "No more users" });
+    }
+
+    const scoredUsers = users.map((u) => ({
+      user: u,
+      score: calculateScore(user, u),
+    }));
+
+    const filtered = scoredUsers.filter((u) => u.score > 30);
+
+    filtered.sort((a, b) => b.score - a.score);
+
+    const nextUser = filtered[0]?.user;
+
+    if (!nextUser) {
+      return res.json({ message: "No good matches" });
+    }
+
+    return res.json({
+      user: {
+        // score:scoredUsers[0].score,
+        id: nextUser._id,
+        username: nextUser.username,
+        instrument: nextUser.instrument,
+        skillLevel: nextUser.skillLevel,
+        genre: nextUser.genre,
+        availability: nextUser.availability,
+      },
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export {
+  login,
+  register,
+  details,
+  getMatches,
+  likeUser,
+  skipUsers,
+  getNextUser,
+};

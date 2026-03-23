@@ -24,23 +24,40 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    instrument:{
-      type:String,
-      default:"",
+    instrument: {
+      type: String,
+      default: "",
     },
-    skillLevel:{
-      type:String,
-      enum:["beginner", "intermediate", "advanced"],
-      default:"beginner"
+    skillLevel: {
+      type: String,
+      enum: ["beginner", "intermediate", "advanced"],
+      default: "beginner",
     },
-    genre:{
-      type:String,
-      default:""
+    genre: {
+      type: String,
+      default: "",
     },
-    availability:{
-      type:String,
-      default:""
-    }
+    availability: {
+      type: String,
+      default: "",
+    },
+    likedUsers: 
+      {
+        type: [Schema.Types.ObjectId],
+        ref: "User",
+        default: [],
+      },
+    matchedUsers: 
+      {
+        type: [Schema.Types.ObjectId],
+        ref: "User",
+        default: [],
+      },
+    skippedUsers: {
+        type: [Schema.Types.ObjectId],
+        ref: "User",
+        default: [],
+      },
   },
   { timestamps: true },
 );

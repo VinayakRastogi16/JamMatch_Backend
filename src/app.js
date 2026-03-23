@@ -31,11 +31,18 @@ app.get("/api/test", verifyToken, (req, res) => {
   });
 });
 
-// app.post("/sample", async (req, res)=>{
-//   const newUsers = await User.insertMany(sample);
-//   console.log("users inserted")
+app.post("/sample", async (req, res)=>{
+ await User.updateMany(
+  {},
+  {
+    $set: {
+      likedUsers: [],
+      matchedUsers: []
+    }
+  }
+);
+});
 
-// })
 
 app.listen(8080, () => {
   console.log("server running at port: 8080");
