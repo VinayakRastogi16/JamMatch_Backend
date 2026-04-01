@@ -169,6 +169,7 @@ const getMatches = async (req, res) => {
     const matches = users.map((user) => ({
       user: {
         id: user._id,
+        name: user.name,
         username: user.username,
         instrument: user.instrument,
         skillLevel: user.skillLevel,
