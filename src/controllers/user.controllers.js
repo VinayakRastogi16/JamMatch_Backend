@@ -84,10 +84,28 @@ const register = async (req, res) => {
       name: name,
       username: username.trim().toLowerCase(),
       password: hashedPassword,
+      location: "Mumbai",
     });
 
     try {
       await newUser.save();
+      const token = jwt.sign(
+        {
+          userId: newUser._id,
+          username: newUser.username,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" },
+      );
+
+      return res.status(httpStatus.OK).json({
+        token,
+        user: {
+          id: newUser._id,
+          username: newUser.username,
+          email: newUser.email,
+        },
+      });
     } catch (err) {
       if (err.code === 11000) {
         return res.status(400).json({
@@ -109,19 +127,32 @@ const register = async (req, res) => {
 };
 
 const details = async (req, res) => {
-  const { instrument, skillLevel, genre, availability } = req.body;
+  const {
+    instruments,
+    skillLevel,
+    genres,
+    availability,
+    bio,
+    location,
+    experience,
+    age,
+  } = req.body;
   console.log("Decoded user:", req.user);
 
   try {
     const updatedUser = await User.findByIdAndUpdate(
       req.user.userId,
       {
-        instrument,
+        instruments,
         skillLevel,
-        genre,
+        genres,
         availability,
+        bio,
+        location,
+        experience,
+        age,
       },
-      { returnDocument: "after", runValidators: true },
+      { new: true, runValidators: true },
     );
 
     return res.json({
@@ -129,10 +160,12 @@ const details = async (req, res) => {
       user: {
         id: updatedUser.id,
         username: updatedUser.username,
-        instrument: updatedUser.instrument,
+        instruments: updatedUser.instruments,
         skillLevel: updatedUser.skillLevel,
-        genre: updatedUser.genre,
+        genres: updatedUser.genres,
         availability: updatedUser.availability,
+        age: updatedUser.age,
+        location: updatedUser.location,
       },
     });
   } catch (e) {
@@ -153,17 +186,17 @@ const getMatches = async (req, res) => {
         .json({ message: "User not found!" });
     }
 
+    const excludedUsers = [
+      currUser._id,
+      ...currUser.likedUsers,
+      ...currUser.matchedUsers,
+      ...currUser.skippedUsers,
+    ];
+
     const users = await User.find({
-      _id: {
-        $ne: currUser._id,
-        $nin: [
-          ...currUser.likedUsers,
-          ...currUser.matchedUsers,
-          ...currUser.skippedUsers,
-        ],
-      },
-      instrument: { $ne: "" },
-      genre: { $ne: "" },
+      _id: { $nin: excludedUsers },
+      instruments: { $exists: true, $not: { $size: 0 } },
+      genres: { $exists: true, $not: { $size: 0 } },
     });
 
     const matches = users.map((user) => ({
@@ -171,17 +204,20 @@ const getMatches = async (req, res) => {
         id: user._id,
         name: user.name,
         username: user.username,
-        instrument: user.instrument,
+        instrument: user.instruments,
         skillLevel: user.skillLevel,
-        genre: user.genre,
+        genre: user.genres,
         availability: user.availability,
+        location: user.location,
+        age: user.age,
       },
       score: calculateScore(currUser, user),
     }));
 
-    const filtered = matches.filter((m) => m.score > 30);
+    const filtered = matches.filter((m)=>m.score>10);
 
     filtered.sort((a, b) => b.score - a.score);
+    console.log(filtered);
 
     return res.json(filtered.slice(0, 10));
   } catch (e) {

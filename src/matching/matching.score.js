@@ -1,36 +1,37 @@
-const normalize = (str) => {
-  return str?.toLowerCase().trim();
+const normalizeArray = (arr) => {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(item =>
+    typeof item === "string" ? item.toLowerCase().trim() : ""
+  );
 };
 
-const calculateScore = (u1, u2) => {
+const hasCommon = (arr1, arr2) =>
+  arr1.some(item => arr2.includes(item));
+
+const calculateScore = (currentUser, otherUser) => {
   let score = 0;
 
-  if (normalize(u1.genre) === normalize(u2.genre)) {
-    score += 40;
+  // 🎸 Instrument match
+  if (hasCommon(currentUser.instruments, otherUser.instruments)) {
+    score += 25;
   }
 
-  const levels = ["beginner", "intermediate", "advanced"];
+  // 🎧 Genre match
+  if (hasCommon(currentUser.genres, otherUser.genres)) {
+    score += 25;
+  }
 
-  const diff = Math.abs(
-    levels.indexOf(normalize(u1.skillLevel)) - levels.indexOf(normalize(u2.skillLevel)),
-  );
-
-  if (diff === 0) score += 30;
-  else if (diff === 1) score += 15;
-
-  if (normalize(u1.instrument) !== normalize(u2.instrument)) {
+  // 🎯 Skill match
+  if (currentUser.skillLevel === otherUser.skillLevel) {
     score += 20;
-  } else {
-    score += 5;
   }
 
-  if (normalize(u1.availability) === normalize(u2.availability)) {
-    score += 10;
+  // ⏰ Availability match
+  if (hasCommon(currentUser.availability, otherUser.availability)) {
+    score += 15;
   }
 
-  if(score>30){
   return score;
-  }
 };
 
 export { calculateScore };

@@ -24,40 +24,60 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    instrument: {
-      type: String,
-      default: "",
-    },
+    instruments:
+      {
+        type: [String],
+        default: [],
+      },
     skillLevel: {
       type: String,
-      enum: ["beginner", "intermediate", "advanced"],
+      enum: ["beginner", "intermediate", "advanced", "professional"],
       default: "beginner",
     },
-    genre: {
-      type: String,
-      default: "",
-    },
-    availability: {
-      type: String,
-      default: "",
-    },
-    likedUsers: 
+    genres: 
       {
-        type: [Schema.Types.ObjectId],
-        ref: "User",
+        type: [String],
         default: [],
       },
-    matchedUsers: 
+    availability: [
       {
-        type: [Schema.Types.ObjectId],
-        ref: "User",
-        default: [],
+        type: String,
+        default: "",
       },
+    ],
+    likedUsers: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+    },
+    matchedUsers: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+    },
     skippedUsers: {
-        type: [Schema.Types.ObjectId],
-        ref: "User",
-        default: [],
-      },
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+    },
+    location: {
+      type: String,
+      required: true,
+    },
+    bio:{
+      type:String,
+      default:""
+    },
+    experience:{
+      type:Number,
+      min:0,
+      max:50,
+      default:3
+    },
+    age:{
+      type:Number,
+      default:14
+    }
   },
   { timestamps: true },
 );
