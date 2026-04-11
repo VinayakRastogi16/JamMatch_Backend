@@ -8,6 +8,7 @@ import router from "./routes/user.routes.js";
 import { verifyToken } from "./middlewares/verifyToken.middleware.js";
 import { User } from "./models/user.model.js";
 
+
 const app = express();
 const mongoUri =process.env.MONGO_URI;
 const connectionDB = await mongoose.connect(mongoUri);
@@ -43,7 +44,4 @@ app.post("/sample", async (req, res)=>{
 );
 });
 
-
-app.listen(8080, () => {
-  console.log("server running at port: 8080");
-});
+export {app}

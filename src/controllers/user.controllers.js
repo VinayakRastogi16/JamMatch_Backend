@@ -210,6 +210,8 @@ const getMatches = async (req, res) => {
         availability: user.availability,
         location: user.location,
         age: user.age,
+        experience:user.experience,
+        bio:user.bio
       },
       score: calculateScore(currUser, user),
     }));
