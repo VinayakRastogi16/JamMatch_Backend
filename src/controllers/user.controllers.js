@@ -210,13 +210,13 @@ const getMatches = async (req, res) => {
         availability: user.availability,
         location: user.location,
         age: user.age,
-        experience:user.experience,
-        bio:user.bio
+        experience: user.experience,
+        bio: user.bio,
       },
       score: calculateScore(currUser, user),
     }));
 
-    const filtered = matches.filter((m)=>m.score>10);
+    const filtered = matches.filter((m) => m.score > 10);
 
     filtered.sort((a, b) => b.score - a.score);
     console.log(filtered);
@@ -427,6 +427,31 @@ const getNextUser = async (req, res) => {
   }
 };
 
+const verifyMatch = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+
+    console.log("Current user ID:", req.user.userId);
+    console.log("Target ID:", req.params.targetId);
+    console.log("Matched users:", JSON.stringify(user.matchedUsers));
+
+    const isMatched = user.matchedUsers.some(
+      (id) => id.toString() === req.params.targetId.toString()
+    );
+
+    console.log("Is matched:", isMatched);
+
+    if (!isMatched) {
+      return res.status(403).json({ message: "Not matched with this user." });
+    }
+
+    return res.json({ allowed: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   login,
   register,
@@ -435,4 +460,5 @@ export {
   likeUser,
   skipUsers,
   getNextUser,
+  verifyMatch
 };
