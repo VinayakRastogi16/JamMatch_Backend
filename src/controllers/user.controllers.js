@@ -44,6 +44,8 @@ const login = async (req, res) => {
       { expiresIn: "7d" },
     );
 
+    
+
     return res.status(httpStatus.OK).json({
       token,
       user: {
@@ -431,21 +433,25 @@ const verifyMatch = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
 
-    console.log("Current user ID:", req.user.userId);
-    console.log("Target ID:", req.params.targetId);
-    console.log("Matched users:", JSON.stringify(user.matchedUsers));
+    const roomId = req.params.targetId;
+
+    const [user1, user2] = roomId.split("_");
+
+    const currentUserId = req.user.userId.toString();
+
+    const otherUserId =
+      currentUserId === user1 ? user2 : user1;
 
     const isMatched = user.matchedUsers.some(
-      (id) => id.toString() === req.params.targetId.toString()
+      (id) => id.toString() === otherUserId
     );
-
-    console.log("Is matched:", isMatched);
 
     if (!isMatched) {
       return res.status(403).json({ message: "Not matched with this user." });
     }
 
     return res.json({ allowed: true });
+
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: "Server error" });
