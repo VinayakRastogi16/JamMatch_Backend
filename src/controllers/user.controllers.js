@@ -39,6 +39,7 @@ const login = async (req, res) => {
       {
         userId: user._id,
         username: user.username,
+        profileCompleted:user.profileCompleted
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" },
@@ -52,6 +53,7 @@ const login = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        profileCompleted:user.profileCompleted,
       },
     });
   } catch (e) {
@@ -87,6 +89,7 @@ const register = async (req, res) => {
       username: username.trim().toLowerCase(),
       password: hashedPassword,
       location: "Mumbai",
+      profileCompleted:false,
     });
 
     try {
@@ -153,6 +156,7 @@ const details = async (req, res) => {
         location,
         experience,
         age,
+        profileCompleted:true
       },
       { new: true, runValidators: true },
     );
@@ -168,6 +172,7 @@ const details = async (req, res) => {
         availability: updatedUser.availability,
         age: updatedUser.age,
         location: updatedUser.location,
+        profileCompleted: updatedUser.profileCompleted
       },
     });
   } catch (e) {

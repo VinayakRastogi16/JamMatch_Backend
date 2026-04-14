@@ -77,6 +77,10 @@ const userSchema = new Schema(
     age:{
       type:Number,
       default:14
+    },
+    profileCompleted:{
+      type:Boolean,
+      default:false,
     }
   },
   { timestamps: true },
