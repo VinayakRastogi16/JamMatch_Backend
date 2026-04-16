@@ -98,6 +98,7 @@ const register = async (req, res) => {
         {
           userId: newUser._id,
           username: newUser.username,
+          profileCompleted:false,
         },
         process.env.JWT_SECRET,
         { expiresIn: "7d" },
@@ -109,6 +110,7 @@ const register = async (req, res) => {
           id: newUser._id,
           username: newUser.username,
           email: newUser.email,
+          profileCompleted: false,
         },
       });
     } catch (err) {
@@ -188,6 +190,15 @@ const getMatches = async (req, res) => {
     const currUser = await User.findById(req.user.userId);
 
     if (!currUser) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    // 🔒 Block if profile not completed
+    if (!currUser.profileCompleted) {
+      return res.status(403).json({ error: "profile_incomplete" });
+    }
+
+    if (!currUser) {
       return res
         .status(httpStatus.NOT_FOUND)
         .json({ message: "User not found!" });
@@ -223,7 +234,7 @@ const getMatches = async (req, res) => {
       score: calculateScore(currUser, user),
     }));
 
-    const filtered = matches.filter((m) => m.score > 10);
+    const filtered = matches.filter((m) => m.score > 25);
 
     filtered.sort((a, b) => b.score - a.score);
     console.log(filtered);
@@ -352,9 +363,6 @@ const skipUsers = async (req, res) => {
       user.skippedUsers.push(targetUserId);
     }
 
-    if (!user.skippedUsers.some((id) => id.toString() === targetUserId)) {
-      user.skippedUsers.push(targetUserId);
-    }
 
     await user.save();
 
@@ -392,8 +400,8 @@ const getNextUser = async (req, res) => {
 
     const users = await User.find({
       _id: { $nin: excludeUsers },
-      instrument: { $ne: "" },
-      genre: { $ne: "" },
+      instruments: {$exists:true, $not: {$size:0}},
+      genres: {$exists:true, $not: {$size:0}},
     });
 
     if (!users.length) {
@@ -462,6 +470,8 @@ const verifyMatch = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+
 
 export {
   login,
