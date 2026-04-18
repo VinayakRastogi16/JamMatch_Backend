@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
+import { Message } from "../models/messages.model.js";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import { calculateScore } from "../matching/matching.score.js";
@@ -471,6 +472,43 @@ const verifyMatch = async (req, res) => {
   }
 };
 
+const getMatchedUsers = async (req, res) => {
+  try {
+    const currUser = await User.findById(req.user.userId);
+
+    if (!currUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const matchedUsers = await User.find({
+      _id: { $in: currUser.matchedUsers },
+    }).select("_id name username instruments");
+
+    const formatted = matchedUsers.map((u) => ({
+      id: u._id,
+      name: u.name,
+      username: u.username,
+      instrument: u.instruments,
+    }));
+
+    return res.json(formatted);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getChatHistory = async (req, res) => {
+  try {
+    const messages = await Message.find({ roomId: req.params.roomId })
+      .sort({ createdAt: 1 })
+      .limit(50);
+    return res.json(messages);
+  } catch (e) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 
 export {
@@ -481,5 +519,7 @@ export {
   likeUser,
   skipUsers,
   getNextUser,
+  getMatchedUsers,
+  getChatHistory,
   verifyMatch
 };
