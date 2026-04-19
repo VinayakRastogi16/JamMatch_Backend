@@ -8,8 +8,8 @@ import {
   skipUsers,
   getNextUser,
   verifyMatch,
-  getMatchedUsers,
-  getChatHistory,
+  getMatchedUser, 
+  getChatHistory
 } from "../controllers/user.controllers.js";
 import { verifyToken } from "../middlewares/verifyToken.middleware.js";
 
@@ -23,7 +23,7 @@ router.post("/like/:id", verifyToken, likeUser);
 router.post("/skip/:id", verifyToken, skipUsers);
 router.get("/feed", verifyToken, getNextUser);
 router.get("/verify-match/:targetId", verifyToken, verifyMatch);
-router.get("/matched-users", verifyToken, getMatchedUsers);
+router.get("/matched-users", verifyToken, getMatchedUser);
 router.get("/chat/:roomId", verifyToken, getChatHistory);
 
 export default router;

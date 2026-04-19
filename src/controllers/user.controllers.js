@@ -1,10 +1,10 @@
 import httpStatus from "http-status";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
-import { Message } from "../models/messages.model.js";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import { calculateScore } from "../matching/matching.score.js";
+import { Message } from "../models/messages.model.js";
 
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET not defined");
@@ -40,13 +40,11 @@ const login = async (req, res) => {
       {
         userId: user._id,
         username: user.username,
-        profileCompleted:user.profileCompleted
+        profileCompleted: user.profileCompleted,
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" },
     );
-
-    
 
     return res.status(httpStatus.OK).json({
       token,
@@ -54,7 +52,7 @@ const login = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        profileCompleted:user.profileCompleted,
+        profileCompleted: user.profileCompleted,
       },
     });
   } catch (e) {
@@ -90,7 +88,7 @@ const register = async (req, res) => {
       username: username.trim().toLowerCase(),
       password: hashedPassword,
       location: "Mumbai",
-      profileCompleted:false,
+      profileCompleted: false,
     });
 
     try {
@@ -99,7 +97,7 @@ const register = async (req, res) => {
         {
           userId: newUser._id,
           username: newUser.username,
-          profileCompleted:false,
+          profileCompleted: false,
         },
         process.env.JWT_SECRET,
         { expiresIn: "7d" },
@@ -159,7 +157,7 @@ const details = async (req, res) => {
         location,
         experience,
         age,
-        profileCompleted:true
+        profileCompleted: true,
       },
       { new: true, runValidators: true },
     );
@@ -175,7 +173,7 @@ const details = async (req, res) => {
         availability: updatedUser.availability,
         age: updatedUser.age,
         location: updatedUser.location,
-        profileCompleted: updatedUser.profileCompleted
+        profileCompleted: updatedUser.profileCompleted,
       },
     });
   } catch (e) {
@@ -364,7 +362,6 @@ const skipUsers = async (req, res) => {
       user.skippedUsers.push(targetUserId);
     }
 
-
     await user.save();
 
     return res.json({ message: "User skipped" });
@@ -401,8 +398,8 @@ const getNextUser = async (req, res) => {
 
     const users = await User.find({
       _id: { $nin: excludeUsers },
-      instruments: {$exists:true, $not: {$size:0}},
-      genres: {$exists:true, $not: {$size:0}},
+      instruments: { $exists: true, $not: { $size: 0 } },
+      genres: { $exists: true, $not: { $size: 0 } },
     });
 
     if (!users.length) {
@@ -453,11 +450,10 @@ const verifyMatch = async (req, res) => {
 
     const currentUserId = req.user.userId.toString();
 
-    const otherUserId =
-      currentUserId === user1 ? user2 : user1;
+    const otherUserId = currentUserId === user1 ? user2 : user1;
 
     const isMatched = user.matchedUsers.some(
-      (id) => id.toString() === otherUserId
+      (id) => id.toString() === otherUserId,
     );
 
     if (!isMatched) {
@@ -465,36 +461,37 @@ const verifyMatch = async (req, res) => {
     }
 
     return res.json({ allowed: true });
-
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
-const getMatchedUsers = async (req, res) => {
+const getMatchedUser = async (req, res) => {
   try {
     const currUser = await User.findById(req.user.userId);
-
     if (!currUser) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(httpStatus.NOT_FOUND).json({
+        message: "User not found",
+      });
     }
 
-    const matchedUsers = await User.find({
+    const matchedUser = await User.find({
       _id: { $in: currUser.matchedUsers },
     }).select("_id name username instruments");
 
-    const formatted = matchedUsers.map((u) => ({
+    const formatted = matchedUser.map((u) => ({
       id: u._id,
       name: u.name,
       username: u.username,
       instrument: u.instruments,
     }));
-
     return res.json(formatted);
   } catch (e) {
     console.error(e);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: "Server Error",
+    });
   }
 };
 
@@ -505,11 +502,12 @@ const getChatHistory = async (req, res) => {
       .limit(50);
     return res.json(messages);
   } catch (e) {
-    return res.status(500).json({ message: "Server error" });
+    console.error(e);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: "Internal server error",
+    });
   }
 };
-
-
 
 export {
   login,
@@ -519,7 +517,7 @@ export {
   likeUser,
   skipUsers,
   getNextUser,
-  getMatchedUsers,
+  verifyMatch,
   getChatHistory,
-  verifyMatch
+  getMatchedUser
 };
