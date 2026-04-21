@@ -16,6 +16,10 @@ const messageSchema = new Schema({
     createdAt:{
         type:Date, 
         default: Date.now,
+    },
+    isSeen:{
+        type:Boolean,
+        default:false
     }
 
 });

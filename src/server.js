@@ -2,6 +2,7 @@ import {app} from "./app.js";
 import http from "http";
 import { Server } from "socket.io";
 import { Message } from "./models/messages.model.js";
+import { User } from "./models/user.model.js";
 
 const server = http.createServer(app);
 
@@ -13,6 +14,46 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
+
+  socket.on("user-online", async (userId)=>{
+    socket.userId = userId;
+    await User.findByIdAndUpdate(userId, {isOnline:true});
+    io.emit("user-status", {userId, isOnline:true});
+  });
+
+  socket.on("typing", ({roomId, userId})=>{
+    socket.to(roomId).emit("typing", {userId});
+
+  })
+
+  socket.on("stop-typing", ({roomId, userId})=>{
+    socket.to(roomId).emit("stop-typing", {userId});
+    
+  })
+
+  socket.on("message-read", async (data)=>{
+    if(!data) return
+    const {roomId, userId } = data
+    if(!roomId || !userId) return
+    
+    await Message.updateMany({
+      roomId, senderId: {$ne:userId}, read:false
+    }, {read:true})
+
+    socket.to(roomId).emit("message-read", {userId});
+
+  })
+
+  socket.on("disconnect", async ()=>{
+    if(socket.userId){
+      await User.findByIdAndUpdate(socket.userId, {
+        isOnline:false,
+        lastSeen: new Date(),
+      })
+
+      io.emit("user-status", {userId: socket.userId, isOnline:false, lastSeen: new Date()})
+    }
+  })
 
   socket.on("join-chat", async (roomId)=>{
     socket.join(roomId);
