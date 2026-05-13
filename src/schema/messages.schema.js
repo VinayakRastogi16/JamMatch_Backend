@@ -1,5 +1,4 @@
 import mongoose, {Schema} from "mongoose";
-
 const messageSchema = new Schema({
     roomId: {
         type:String,
@@ -21,7 +20,5 @@ const messageSchema = new Schema({
         type:Boolean,
         default:false
     }
-
 });
-
 export default messageSchema;
