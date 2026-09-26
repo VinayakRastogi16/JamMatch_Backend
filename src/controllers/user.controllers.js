@@ -43,7 +43,7 @@ const login = async (req, res) => {
         profileCompleted: user.profileCompleted,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "1hr" },
     );
 
     return res.status(httpStatus.OK).json({
@@ -485,6 +485,8 @@ const getMatchedUser = async (req, res) => {
       name: u.name,
       username: u.username,
       instrument: u.instruments,
+      isOnline: u.isOnline,    // ← add this
+      lastSeen: u.lastSeen,  
     }));
     return res.json(formatted);
   } catch (e) {
