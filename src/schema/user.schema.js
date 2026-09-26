@@ -90,6 +90,10 @@ const userSchema = new Schema(
     lastSeen:{
       type:Date,
       default: Date.now
+    },
+    emailVerified:{
+      type:Boolean,
+      default:false
     }
   },
   { timestamps: true },

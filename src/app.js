@@ -7,6 +7,7 @@ import { sample } from "./data/sampleData.js";
 import router from "./routes/user.routes.js";
 import { verifyToken } from "./middlewares/verifyToken.middleware.js";
 import { User } from "./models/user.model.js";
+import notificationRouter from "./routes/notification.routes.js";
 
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 console.log(`MONGO connected DB Host: ${connectionDB.connection.host}`);
 
 app.use("/api/v1/users", router);
+app.use("/api/v1/notifications", notificationRouter);
 
 app.get("/", (req, res) => {
   res.send("hello world");

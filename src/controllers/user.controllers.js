@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import { calculateScore } from "../matching/matching.score.js";
+import createNotification from "../services/notification.services.js";
 import { Message } from "../models/messages.model.js";
 
 if (!process.env.JWT_SECRET) {
@@ -297,22 +298,33 @@ const likeUser = async (req, res) => {
       (id) => id.toString() === currentUserId,
     );
 
+    const alreadyMatch = currentUser.matchedUsers.some(
+      (id) => id.toString() === targetUserId,
+    );
+
     if (targetLikedYou) {
       isMatch = true;
 
-      if (
-        !currentUser.matchedUsers.some((id) => id.toString() === targetUserId)
-      ) {
+      if (!alreadyMatch) {
         currentUser.matchedUsers.push(targetUserId);
-      }
 
-      if (
-        !targetUser.matchedUsers.some((id) => id.toString() === currentUserId)
-      ) {
-        targetUser.matchedUsers.push(currentUserId);
-      }
+        if (
+          !targetUser.matchedUsers.some((id) => id.toString() === currentUserId)
+        ) {
+          targetUser.matchedUsers.push(currentUserId);
+        }
 
-      await targetUser.save();
+        await targetUser.save();
+
+        await createNotification({
+          recipient: currentUserId,
+          sender: targetUserId,
+          type: "MATCH",
+          title: "New match! 🎸",
+          message: `You matched with ${targetUser.username}`,
+          relatedId: targetUserId,
+        });
+      }
     }
 
     await currentUser.save();
@@ -485,8 +497,8 @@ const getMatchedUser = async (req, res) => {
       name: u.name,
       username: u.username,
       instrument: u.instruments,
-      isOnline: u.isOnline,    // ← add this
-      lastSeen: u.lastSeen,  
+      isOnline: u.isOnline, // ← add this
+      lastSeen: u.lastSeen,
     }));
     return res.json(formatted);
   } catch (e) {
@@ -521,5 +533,5 @@ export {
   getNextUser,
   verifyMatch,
   getChatHistory,
-  getMatchedUser
+  getMatchedUser,
 };
