@@ -94,6 +94,14 @@ const userSchema = new Schema(
     emailVerified:{
       type:Boolean,
       default:false
+    },
+    emailTokenHash:{
+      type:String,
+      default:null
+    },
+    emailVerificationExp:{
+      type:Date,
+      default:null
     }
   },
   { timestamps: true },

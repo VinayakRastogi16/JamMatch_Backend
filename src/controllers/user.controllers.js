@@ -2,10 +2,12 @@ import httpStatus from "http-status";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import "dotenv/config";
 import { calculateScore } from "../matching/matching.score.js";
 import createNotification from "../services/notification.services.js";
 import { Message } from "../models/messages.model.js";
+import sendVerificationEmail from "../services/email.service.js";
 
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET not defined");
@@ -83,6 +85,17 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    const verificationTokenHash = crypto
+                      .createHash("sha256")
+                      .update(verificationToken)
+                      .digest("hex");
+
+    const verificationTokenExp = new Date(
+      Date.now()+30*60*1000
+    );
+
     const newUser = new User({
       email: email,
       name: name,
@@ -90,10 +103,20 @@ const register = async (req, res) => {
       password: hashedPassword,
       location: "Mumbai",
       profileCompleted: false,
+      emailVerified:false,
+      emailTokenHash:verificationTokenHash,
+      emailVerificationExp: verificationTokenExp
     });
 
     try {
       await newUser.save();
+
+      await sendVerificationEmail({
+        email:newUser.email,
+        username:newUser.username,
+        verificationToken
+      });
+      
       const token = jwt.sign(
         {
           userId: newUser._id,
@@ -101,7 +124,7 @@ const register = async (req, res) => {
           profileCompleted: false,
         },
         process.env.JWT_SECRET,
-        { expiresIn: "7d" },
+        { expiresIn: "1hr" },
       );
 
       return res.status(httpStatus.OK).json({
@@ -124,7 +147,9 @@ const register = async (req, res) => {
 
     res
       .status(httpStatus.CREATED)
-      .json({ message: "User Registered successfully" });
+      .json({ 
+        message: "User Registered successfully" 
+      });
   } catch (e) {
     console.log(e);
     return res
@@ -523,9 +548,116 @@ const getChatHistory = async (req, res) => {
   }
 };
 
+const verifyEmail = async (req, res)=>{
+  try{
+    const {token} = req.params;
+
+    const tokenHash = crypto
+                      .createHash("sha256")
+                      .update(token)
+                      .digest("hex");
+
+    const user = await User.findOne({
+      emailTokenHash:tokenHash,
+      emailVerificationExp:{$gt:new Date()}
+    });
+
+    if(!user){
+      return res.status(400).json({
+        success:false,
+        message:"Invalid or expired verification link"
+      })
+    }
+
+    user.emailVerified = true;
+    user.emailTokenHash=null;
+    user.emailVerificationExp = null;
+
+    await user.save();
+
+    return res.status(200).json({
+      success:true,
+      message:"Email verified successfully"
+    })
+  }catch(e){
+    console.error("Email verification error: ",e);
+
+    return res.status(500).json({
+      success:false,
+      message:"failed to verify email"
+    })
+  }
+}
+
+const resendVerificationEmail = async (req, res)=>{
+  try {
+    const {email} = req.body;;
+    if(!email){
+      return res.status(400).json({
+        success:false,
+        message:"Email is required"
+      })
+    }
+
+    const user = await User.findOne({
+      email:email.trim().toLowerCase()
+    });
+
+    if(!user){
+      return res.status(200).json({
+        success:true,
+        message:"If the account exists, a verification email has been sent",
+      })
+    }
+
+    if(user.emailVerified){
+      return res.status(400).json({
+        success:false,
+        message:"Email is verified"
+      })
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    const verificationTokenHash = crypto
+                          .createHash("sha256")
+                          .update(verificationToken)
+                          .digest("hex");
+
+    const verificationTokenExp = new Date(
+      Date.now()+30*60*1000
+    );
+
+    user.emailTokenHash = verificationTokenHash;
+    user.emailVerificationExp = verificationTokenExp;
+
+    await user.save();
+
+    await sendVerificationEmail({
+      email:user.email,
+      username:user.username,
+      verificationToken
+    });
+
+    return res.status(200).json({
+      success:true,
+      message:"Verification email sent"
+    })
+
+  } catch (e) {
+    console.error("Resend verification error: ",e);
+
+    return res.status(500).json({
+      success:false,
+      message: "Failed to resend verification email",
+    })
+  }
+}
+
 export {
   login,
   register,
+  verifyEmail,
   details,
   getMatches,
   likeUser,
@@ -533,5 +665,6 @@ export {
   getNextUser,
   verifyMatch,
   getChatHistory,
+  resendVerificationEmail,
   getMatchedUser,
 };
