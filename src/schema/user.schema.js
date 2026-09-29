@@ -102,7 +102,29 @@ const userSchema = new Schema(
     emailVerificationExp:{
       type:Date,
       default:null
+    },
+    notifications:{
+      newMatches:{
+        type:Boolean,
+        default:true
+      },
+
+      messages:{
+        type:Boolean,
+        default:true
+      },
+
+      liveAudioRooms:{
+        type:Boolean,
+        default:true
+      },
+
+      weeklyEmail:{
+        type:Boolean,
+        default:true
+      }
     }
+
   },
   { timestamps: true },
 );

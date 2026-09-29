@@ -7,7 +7,4 @@ const notificationRouter = express.Router();
 notificationRouter.get("/", verifyToken, getNotification);
 
 notificationRouter.patch("/:id/read", verifyToken, markNotificationAsRead);
-
-notificationRouter.post("/test", verifyToken, createTestNotification);
-
 export default notificationRouter;

@@ -20,6 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 
 console.log(`MONGO connected DB Host: ${connectionDB.connection.host}`);
 
+app.set("trust proxy", false);
 app.use("/api/v1/users", router);
 app.use("/api/v1/notifications", notificationRouter);
 

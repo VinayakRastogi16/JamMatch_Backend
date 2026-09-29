@@ -349,6 +349,15 @@ const likeUser = async (req, res) => {
           message: `You matched with ${targetUser.username}`,
           relatedId: targetUserId,
         });
+
+        await createNotification({
+          recipient: targetUserId,
+          sender: currentUserId,
+          type: "MATCH",
+          title: "New match! 🎸",
+          message: `You matched with ${currentUser.username}`,
+          relatedId: targetUserId,
+        });
       }
     }
 
@@ -654,6 +663,31 @@ const resendVerificationEmail = async (req, res)=>{
   }
 }
 
+const getEmailVerificationStatus = async (req, res)=>{
+  try {
+    const user = await User.findById(req.user.userId).select("emailVerified");
+
+    if(!user){
+      return res.status(httpStatus.NOT_FOUND).json({
+        success:false,
+        message:"User not found"
+      });
+    }
+
+    return res.status(200).json({
+      success:true,
+      emailVerified:user.emailVerified,
+    });
+  } catch (e) {
+    console.error("Verification status error: ", e);
+
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message:"Failed to check verification status"
+    });
+  }
+}
+
 export {
   login,
   register,
@@ -667,4 +701,5 @@ export {
   getChatHistory,
   resendVerificationEmail,
   getMatchedUser,
+  getEmailVerificationStatus
 };

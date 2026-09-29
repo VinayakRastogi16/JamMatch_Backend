@@ -1,15 +1,21 @@
-import {Resend} from "resend";
 import dotenv from "dotenv";
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+    service:"gmail",
+    auth:{
+        user:process.env.EMAIL_USER,
+        pass:process.env.EMAIL_APP_PASSWORD
+    }
+})
 
 const sendVerificationEmail = async ({email, username, verificationToken})=>{
     const verificationURL = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
-    const {data, e} = await resend.emails.send({
-        from:process.env.EMAIL_FROM,
+    return transporter.sendMail({
+        from:`JamMatch <${process.env.EMAIL_USER}>`,
         to:email,
         subject:"Verify your JamMatch Account!",
         html:`
@@ -24,13 +30,26 @@ const sendVerificationEmail = async ({email, username, verificationToken})=>{
             </div>
         `
     });
-
-    if(e){
-        throw new Error(e.message);
-    }
-
-    return data;
 }
 
+export const sendMatchEmail = async ({email, username, senderName})=>{
+    return transporter.sendMail({
+        from: `JamMatch <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject:"You have a new match on JamMatch!",
+        html:`
+            <div>
+                <h2>It's a match, ${username}!</h2>
+
+                <p>You matched with <strong>${senderName}</strong>.</p>
+
+                <p>
+                    Open JamMatch and start making music together.
+                </p>
+            </div>
+        `,
+    });
+
+}
 
 export default sendVerificationEmail;
