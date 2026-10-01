@@ -361,6 +361,17 @@ const likeUser = async (req, res) => {
       }
     }
 
+    if(!targetLikedYou && !alreadyLiked){
+      await createNotification({
+        recipient:targetUserId,
+        sender:currentUserId,
+        type:"LIKE",
+        title:"New like! ❤️",
+        message: `${currentUser.username} liked your profile`,
+        relatedId:currentUserId
+      })
+    }
+
     await currentUser.save();
 
     return res.json({
