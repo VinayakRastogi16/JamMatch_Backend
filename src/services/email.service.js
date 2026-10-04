@@ -52,4 +52,24 @@ export const sendMatchEmail = async ({email, username, senderName})=>{
 
 }
 
+export const sendMessageEmail = async ({email, username, senderName})=>{
+    return transporter.sendMail({
+        from: `JamMatch <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject:"You have a new message on JamMatch!",
+        html:`
+            <div>
+                <h2>New message, ${username}! ✉️</h2>
+
+                <p><strong>${senderName}</strong> Sent you a message on JamMatch.</p>
+
+                <p>
+                    Open JamMatch to view the message and continue the conversation.
+                </p>
+            </div>
+        `,
+    });
+
+}
+
 export default sendVerificationEmail;
