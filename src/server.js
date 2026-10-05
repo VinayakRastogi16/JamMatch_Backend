@@ -117,7 +117,7 @@ io.on("connection", (socket) => {
 
     await message.save();
 
-    
+    io.to(roomId).emit("receive-message", message);
 
     await createNotification({
       recipient: recipientId,
@@ -129,7 +129,7 @@ io.on("connection", (socket) => {
       isRecipientOnline:recipient.isOnline,
     })
 
-    io.to(roomId).emit("recieve-message", message);
+    
   });
 
   socket.on("join-room", (roomId)=>{
