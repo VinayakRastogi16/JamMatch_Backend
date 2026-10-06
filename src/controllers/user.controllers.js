@@ -46,7 +46,7 @@ const login = async (req, res) => {
         profileCompleted: user.profileCompleted,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1hr" },
+      { expiresIn: "1d" },
     );
 
     return res.status(httpStatus.OK).json({
@@ -124,7 +124,7 @@ const register = async (req, res) => {
           profileCompleted: false,
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1hr" },
+        { expiresIn: "1d" },
       );
 
       return res.status(httpStatus.OK).json({

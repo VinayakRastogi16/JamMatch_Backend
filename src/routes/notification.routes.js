@@ -1,5 +1,5 @@
 import express from 'express';
-import { markNotificationAsRead, getNotification , createTestNotification} from '../controllers/notification.controller.js';
+import { markNotificationAsRead, getNotification} from '../controllers/notification.controller.js';
 import { verifyToken } from '../middlewares/verifyToken.middleware.js';
 
 const notificationRouter = express.Router();

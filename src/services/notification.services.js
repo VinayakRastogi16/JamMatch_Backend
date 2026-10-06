@@ -1,5 +1,5 @@
 import { User } from "../models/user.model.js";
-import Notification from "../schema/notification.schema.js";
+import Notification from "../models/notification.model.js";
 import { sendMatchEmail, sendMessageEmail } from "./email.service.js";
 
 const createNotification = async ({

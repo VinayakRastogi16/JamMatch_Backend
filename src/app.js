@@ -7,6 +7,7 @@ import { sample } from "./data/sampleData.js";
 import router from "./routes/user.routes.js";
 import { verifyToken } from "./middlewares/verifyToken.middleware.js";
 import { User } from "./models/user.model.js";
+import audioRoomRouter from "./routes/audioRoom.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
 
 
@@ -21,8 +22,10 @@ app.use(express.urlencoded({ extended: true }));
 console.log(`MONGO connected DB Host: ${connectionDB.connection.host}`);
 
 app.set("trust proxy", false);
+
 app.use("/api/v1/users", router);
 app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/audio-rooms", audioRoomRouter);
 
 app.get("/", (req, res) => {
   res.send("hello world");
